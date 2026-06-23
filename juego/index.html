@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Aim Trainer 1 Min</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  text-align: center;
+  background: #f2f2f2;
+}
+
+#gameArea {
+  width: 800px;
+  height: 500px;
+  margin: 20px auto;
+  background: white;
+  position: relative;
+  border: 2px solid black;
+  overflow: hidden;
+}
+
+#target {
+  width: 50px;
+  height: 50px;
+  background: red;
+  border-radius: 50%;
+  position: absolute;
+  cursor: pointer;
+}
+
+#info {
+  font-size: 20px;
+  margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎯 Aim Trainer 1 Min</h1>
+
+<div id="gameArea">
+  <div id="target"></div>
+</div>
+
+<div id="info">
+  ⏱ Tiempo: <span id="time">60</span>s | 🏆 Puntos: <span id="score">0</span>
+</div>
+
+<script>
+const target = document.getElementById("target");
+const gameArea = document.getElementById("gameArea");
+const timeText = document.getElementById("time");
+const scoreText = document.getElementById("score");
+
+let score = 0;
+let timeLeft = 60;
+let times = [];
+let misses = 0;
+let startTime = Date.now();
+
+// ⏱ TIMER
+const timer = setInterval(() => {
+  timeLeft--;
+  timeText.textContent = timeLeft;
+
+  if (timeLeft <= 0) {
+    clearInterval(timer);
+    finishGame();
+  }
+}, 1000);
+
+function moveTarget() {
+  const maxX = gameArea.clientWidth - 50;
+  const maxY = gameArea.clientHeight - 50;
+
+  const x = Math.random() * maxX;
+  const y = Math.random() * maxY;
+
+  target.style.left = x + "px";
+  target.style.top = y + "px";
+
+  startTime = Date.now();
+}
+
+// 🎯 ACIERTO
+target.addEventListener("click", (e) => {
+  e.stopPropagation();
+
+  const reaction = Date.now() - startTime;
+  times.push(reaction);
+
+  score += 10;
+
+  scoreText.textContent = score;
+
+  moveTarget();
+});
+
+// ❌ FALLO
+gameArea.addEventListener("click", () => {
+  misses++;
+
+  score -= 5;
+  if (score < 0) score = 0;
+
+  scoreText.textContent = score;
+});
+
+// 📊 FINAL
+function finishGame() {
+
+  let avg = times.length
+    ? times.reduce((a, b) => a + b) / times.length
+    : 0;
+
+  let data = {
+    score: score,
+    avg: avg,
+    misses: misses,
+    date: new Date().toLocaleString()
+  };
+
+  let oldData = JSON.parse(localStorage.getItem("aimData")) || [];
+  oldData.push(data);
+  localStorage.setItem("aimData", JSON.stringify(oldData));
+
+  alert(
+    "⏱ Fin del juego\n" +
+    "🏆 Puntos: " + score + "\n" +
+    "❌ Fallos: " + misses + "\n" +
+    "⚡ Tiempo medio: " + avg.toFixed(2) + " ms"
+  );
+
+  window.location.href = "dashboard.html";
+}
+
+moveTarget();
+</script>
+
+</body>
+</html>
