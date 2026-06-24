@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #f4f4f4;
+}
+
+h1 {
+  margin-top: 20px;
+}
+
+button {
+  padding: 10px 15px;
+  margin: 5px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+}
+
+button:hover {
+  background: #555;
+}
+
+.card {
+  background: white;
+  margin: 10px auto;
+  padding: 10px;
+  width: 420px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #ccc;
+}
+
+.best {
+  border: 2px solid gold;
+}
+
+.box {
+  width: 80%;
+  margin: 20px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #ccc;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📊 Dashboard</h1>
+
+<!-- BOTONES -->
+<div>
+  <button onclick="window.location.href='index.html'">
+    🎮 Volver a jugar
+  </button>
+
+  <button onclick="localStorage.removeItem('aimData'); location.reload();">
+    🗑 Borrar datos
+  </button>
+</div>
+
+<!-- GRÁFICA PRINCIPAL -->
+<div class="box">
+  <h3>📈 Score por partida</h3>
+  <canvas id="myChart"></canvas>
+</div>
+
+<!-- GRÁFICA DERIVADA -->
+<div class="box">
+  <h3>📉 Derivada (cambio de rendimiento)</h3>
+  <canvas id="derivativeChart"></canvas>
+</div>
+
+<!-- PREDICCIÓN -->
+<div id="predictionBox"></div>
+
+<div id="stats"></div>
+
+<script>
+
+let data = JSON.parse(localStorage.getItem("aimData")) || [];
+let container = document.getElementById("stats");
+let predictionBox = document.getElementById("predictionBox");
+
+if (data.length === 0) {
+  container.innerHTML = "<p>No hay datos aún</p>";
+} else {
+
+  // 🏆 mejor score
+  let bestIndex = 0;
+  let bestValue = data[0].score;
+
+  data.forEach((r, i) => {
+    if (r.score > bestValue) {
+      bestValue = r.score;
+      bestIndex = i;
+    }
+  });
+
+  // 📊 tarjetas
+  data.forEach((run, i) => {
+    container.innerHTML += `
+      <div class="card ${i === bestIndex ? 'best' : ''}">
+        <h3>Partida ${i + 1}</h3>
+        <p>🏆 Score: ${run.score}</p>
+        <p>❌ Fallos: ${run.misses}</p>
+        <p>⚡ Avg: ${run.avg.toFixed(2)} ms</p>
+        <p>📅 ${run.date}</p>
+      </div>
+    `;
+  });
+
+  // =========================
+  // 📈 SCORE
+  // =========================
+  let labels = data.map((_, i) => "Partida " + (i + 1));
+  let values = data.map(d => d.score);
+
+  new Chart(document.getElementById("myChart"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Score",
+        data: values,
+        borderColor: "green",
+        tension: 0.3,
+        fill: true
+      }]
+    }
+  });
+
+  // =========================
+  // 📉 DERIVADA
+  // =========================
+  let derivative = [];
+
+  for (let i = 1; i < data.length; i++) {
+    derivative.push(data[i].score - data[i - 1].score);
+  }
+
+  new Chart(document.getElementById("derivativeChart"), {
+    type: "bar",
+    data: {
+      labels: data.slice(1).map((_, i) => "Δ " + i),
+      datasets: [{
+        label: "Cambio de score",
+        data: derivative,
+        backgroundColor: "orange"
+      }]
+    }
+  });
+
+  // =========================
+  // 🔮 PREDICCIÓN
+  // =========================
+  function predictNext(values) {
+    let n = values.length;
+    if (n < 2) return values[n - 1];
+
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+    for (let i = 0; i < n; i++) {
+      let x = i + 1;
+      let y = values[i];
+
+      sumX += x;
+      sumY += y;
+      sumXY += x * y;
+      sumX2 += x * x;
+    }
+
+    let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    let b = (sumY - m * sumX) / n;
+
+    return m * (n + 1) + b;
+  }
+
+  let prediction = predictNext(values);
+
+  predictionBox.innerHTML = `
+    <h2>🔮 Predicción próxima partida: ${prediction.toFixed(2)} puntos</h2>
+  `;
+}
+
+</script>
+
+</body>
+</html>
