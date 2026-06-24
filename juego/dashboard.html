@@ -3,209 +3,200 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard Profesional - Aim Lab</title>
+  <title>Dashboard</title>
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     body {
-      font-family: 'Segoe UI', Arial, sans-serif;
+      font-family: Arial;
+      text-align: center;
       background: #f4f4f4;
-      padding: 20px;
-      color: #333;
     }
 
     h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .controls {
-      text-align: center;
-      margin-bottom: 30px;
+      margin-top: 20px;
     }
 
     button {
-      padding: 10px 20px;
+      padding: 10px 15px;
       margin: 5px;
       cursor: pointer;
-      border-radius: 8px;
       border: none;
+      border-radius: 8px;
       background: #333;
       color: white;
     }
 
-    /* Contenedor unificado para todo */
-    .box {
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      margin: 20px auto;
-      max-width: 900px;
-    }
-
-    .chart-wrapper {
-      height: 300px;
-      width: 100%;
-      margin-top: 15px;
-    }
-
-    .desc {
-      font-size: 0.9em;
-      color: #666;
-      margin: 10px 0;
-      font-style: italic;
-      background: #f9f9f9;
-      padding: 10px;
-      border-left: 4px solid #333;
-    }
-
-    .stats-grid {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin-bottom: 20px;
+    button:hover {
+      background: #555;
     }
 
     .card {
       background: white;
-      padding: 15px;
+      margin: 10px auto;
+      padding: 10px;
+      width: 420px;
       border-radius: 10px;
-      width: 140px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      border: 1px solid #ddd;
+      box-shadow: 0 0 10px #ccc;
     }
 
     .best {
       border: 2px solid gold;
     }
 
-    h2 {
-      text-align: center;
-      margin-top: 50px;
+    .box {
+      width: 80%;
+      margin: 20px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>📊 Dashboard Integral de Rendimiento</h1>
+  <h1>📊 Dashboard</h1>
 
-  <div class="controls">
-    <button onclick="window.location.href='index.html'">🎮 Volver a jugar</button>
-    <button onclick="localStorage.removeItem('aimData'); location.reload();">🗑 Borrar datos</button>
+  <!-- BOTONES -->
+  <div>
+    <button onclick="window.location.href='index.html'">
+      🎮 Volver a jugar
+    </button>
+
+    <button onclick="localStorage.removeItem('aimData'); location.reload();">
+      🗑 Borrar datos
+    </button>
   </div>
 
-  <div id="stats" class="stats-grid"></div>
-  <div id="predictionBox" style="text-align:center; font-weight:bold; margin-bottom:20px;"></div>
-
+  <!-- GRÁFICA PRINCIPAL -->
   <div class="box">
     <h3>📈 Score por partida</h3>
-    <p class="desc"><b>Contexto:</b> Rendimiento acumulado. Evalúa la curva de aprendizaje del usuario durante la
-      sesión.</p>
-    <div class="chart-wrapper"><canvas id="scoreChart"></canvas></div>
+    <canvas id="myChart"></canvas>
   </div>
 
+  <!-- GRÁFICA DERIVADA -->
   <div class="box">
-    <h3>📉 Derivada (Cambio de rendimiento)</h3>
-    <p class="desc"><b>Sistema Matemático:</b> Representa la variación ($\Delta$) entre partidas consecutivas ($P_n -
-      P_{n-1}$). Indica si el usuario mejora o presenta fatiga.</p>
-    <div class="chart-wrapper"><canvas id="derivativeChart"></canvas></div>
+    <h3>📉 Derivada (cambio de rendimiento)</h3>
+    <canvas id="derivativeChart"></canvas>
   </div>
 
-  <h2>Análisis Matemático (Carga el CSV)</h2>
-  <div style="text-align:center;"><input type="file" id="csvFile" accept=".csv"></div>
+  <!-- PREDICCIÓN -->
+  <div id="predictionBox"></div>
 
-  <div class="box">
-    <h3>Velocidad v(t) - 1ra Derivada</h3>
-    <p class="desc"><b>Contexto:</b> Mide la rapidez del cursor ($ds/dt$). Picos altos reflejan movimientos balísticos
-      precisos.</p>
-    <div class="chart-wrapper"><canvas id="chartVel"></canvas></div>
-  </div>
-
-  <div class="box">
-    <h3>Aceleración a(t) - 2da Derivada</h3>
-    <p class="desc"><b>Sistema Matemático:</b> Cambio en la velocidad ($dv/dt$). Detecta el <i>jitter</i>
-      (micro-temblor) inducido por fatiga muscular.</p>
-    <div class="chart-wrapper"><canvas id="chartAcel"></canvas></div>
-  </div>
-
-  <div class="box">
-    <h3>Monotonía (Estado Creciente/Decreciente)</h3>
-    <p class="desc"><b>Contexto:</b> Clasificación binaria (1: Creciente / -1: Decreciente). Define el umbral donde el
-      rendimiento declina.</p>
-    <div class="chart-wrapper"><canvas id="chartMonotonia"></canvas></div>
-  </div>
+  <div id="stats"></div>
 
   <script>
-    // --- CONFIGURACIÓN VISUAL UNIFICADA CON INTERACCIÓN ---
-    const commonOptions = {
-      responsive: true, maintainAspectRatio: false, tension: 0.3, pointRadius: 0,
-      interaction: { mode: 'index', intersect: false },
-      scales: { x: { grid: { color: '#eee' } }, y: { grid: { color: '#eee' } } }
-    };
 
-    let charts = {};
-    function draw(id, type, labels, data, label, color, bgColor, stepped = false) {
-      if (charts[id]) charts[id].destroy();
-      charts[id] = new Chart(document.getElementById(id).getContext('2d'), {
-        type: type,
-        data: { labels: labels, datasets: [{ label: label, data: data, borderColor: color, backgroundColor: bgColor, fill: true, stepped: stepped }] },
-        options: commonOptions
-      });
-    }
-
-    // 1. CARGA PARTIDAS Y PREDICCIÓN
     let data = JSON.parse(localStorage.getItem("aimData")) || [];
+    let container = document.getElementById("stats");
     let predictionBox = document.getElementById("predictionBox");
 
-    if (data.length > 0) {
-      let bestIndex = data.map(d => d.score).indexOf(Math.max(...data.map(d => d.score)));
-      data.forEach((run, i) => {
-        document.getElementById("stats").innerHTML += `
-            <div class="card ${i === bestIndex ? 'best' : ''}">
-                <strong>P${i + 1}</strong><br>🏆 ${run.score}<br>❌ ${run.misses}<br>⚡ ${run.avg.toFixed(0)}ms
-            </div>`;
+    if (data.length === 0) {
+      container.innerHTML = "<p>No hay datos aún</p>";
+    } else {
+
+      // 🏆 mejor score
+      let bestIndex = 0;
+      let bestValue = data[0].score;
+
+      data.forEach((r, i) => {
+        if (r.score > bestValue) {
+          bestValue = r.score;
+          bestIndex = i;
+        }
       });
 
-      draw('scoreChart', 'line', data.map((_, i) => "P" + (i + 1)), data.map(d => d.score), "Score", "green", "rgba(0,128,0,0.1)");
-      draw('derivativeChart', 'bar', data.slice(1).map((_, i) => "Δ" + i), data.slice(1).map((r, i) => r.score - data[i].score), "Cambio", "orange", "orange");
+      // 📊 tarjetas
+      data.forEach((run, i) => {
+        container.innerHTML += `
+      <div class="card ${i === bestIndex ? 'best' : ''}">
+        <h3>Partida ${i + 1}</h3>
+        <p>🏆 Score: ${run.score}</p>
+        <p>❌ Fallos: ${run.misses}</p>
+        <p>⚡ Avg: ${run.avg.toFixed(2)} ms</p>
+        <p>📅 ${run.date}</p>
+      </div>
+    `;
+      });
 
-      // Predicción Lineal
-      let n = data.length;
-      let sumX = data.reduce((acc, _, i) => acc + (i + 1), 0);
-      let sumY = data.reduce((acc, d) => acc + d.score, 0);
-      let sumXY = data.reduce((acc, d, i) => acc + ((i + 1) * d.score), 0);
-      let sumX2 = data.reduce((acc, _, i) => acc + ((i + 1) ** 2), 0);
-      let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-      let b = (sumY - m * sumX) / n;
-      predictionBox.innerHTML = `🔮 Predicción próxima partida: ${(m * (n + 1) + b).toFixed(2)} puntos`;
+      // =========================
+      // 📈 SCORE
+      // =========================
+      let labels = data.map((_, i) => "Partida " + (i + 1));
+      let values = data.map(d => d.score);
+
+      new Chart(document.getElementById("myChart"), {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Score",
+            data: values,
+            borderColor: "green",
+            tension: 0.3,
+            fill: true
+          }]
+        }
+      });
+
+      // =========================
+      // 📉 DERIVADA
+      // =========================
+      let derivative = [];
+
+      for (let i = 1; i < data.length; i++) {
+        derivative.push(data[i].score - data[i - 1].score);
+      }
+
+      new Chart(document.getElementById("derivativeChart"), {
+        type: "bar",
+        data: {
+          labels: data.slice(1).map((_, i) => "Δ " + i),
+          datasets: [{
+            label: "Cambio de score",
+            data: derivative,
+            backgroundColor: "orange"
+          }]
+        }
+      });
+
+      // =========================
+      // 🔮 PREDICCIÓN
+      // =========================
+      function predictNext(values) {
+        let n = values.length;
+        if (n < 2) return values[n - 1];
+
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+        for (let i = 0; i < n; i++) {
+          let x = i + 1;
+          let y = values[i];
+
+          sumX += x;
+          sumY += y;
+          sumXY += x * y;
+          sumX2 += x * x;
+        }
+
+        let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        let b = (sumY - m * sumX) / n;
+
+        return m * (n + 1) + b;
+      }
+
+      let prediction = predictNext(values);
+
+      predictionBox.innerHTML = `
+    <h2>🔮 Predicción próxima partida: ${prediction.toFixed(2)} puntos</h2>
+  `;
     }
 
-    // 2. CARGA CSV
-    function smooth(data, win = 10) { return data.map((_, i, arr) => { let s = Math.max(0, i - win), e = Math.min(arr.length, i + win); let sl = arr.slice(s, e); return sl.reduce((a, b) => a + b) / sl.length; }); }
-
-    document.getElementById('csvFile').addEventListener('change', function (e) {
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        const lines = e.target.result.split('\n').filter(r => r.trim() !== "");
-        let t = [], v = [], a = [], m = [];
-        for (let i = 1; i < lines.length; i++) {
-          let cols = lines[i].split(',');
-          if (cols.length >= 6) {
-            t.push(i); v.push(parseFloat(cols[3])); a.push(parseFloat(cols[4]));
-            let est = cols[5].trim().toLowerCase();
-            m.push(est.includes('creciente') ? 1 : (est.includes('decreciente') ? -1 : 0));
-          }
-        }
-        draw('chartVel', 'line', t, smooth(v), 'v(t)', '#00d4ff', 'rgba(0,212,255,0.1)');
-        draw('chartAcel', 'line', t, smooth(a), 'a(t)', '#ff4d4d', 'rgba(255,77,77,0.1)');
-        draw('chartMonotonia', 'line', t, m, 'Estado', '#39ff14', 'rgba(57,255,20,0.2)', true);
-      };
-      reader.readAsText(e.target.files[0]);
-    });
   </script>
+
 </body>
 
 </html>

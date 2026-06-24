@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Aim Trainer Matemático</title>
+  <title>Aim Trainer 1 Min</title>
 
   <style>
     body {
@@ -11,32 +11,6 @@
       font-family: Arial;
       text-align: center;
       background: #f2f2f2;
-    }
-
-    /* MENÚ DE SELECCIÓN DE TIEMPO */
-    #menu {
-      margin: 20px auto;
-      padding: 15px;
-      background: white;
-      width: 500px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #ccc;
-    }
-
-    #menu button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 0 10px;
-      cursor: pointer;
-      border: none;
-      border-radius: 5px;
-      background: #007bff;
-      color: white;
-      font-weight: bold;
-    }
-
-    #menu button:hover {
-      background: #0056b3;
     }
 
     #gameArea {
@@ -47,9 +21,6 @@
       position: relative;
       border: 2px solid black;
       overflow: hidden;
-      /* El área empieza bloqueada visualmente hasta que elijas el tiempo */
-      opacity: 0.5;
-      pointer-events: none;
     }
 
     #target {
@@ -59,8 +30,6 @@
       border-radius: 50%;
       position: absolute;
       cursor: pointer;
-      display: none;
-      /* El objetivo está oculto al inicio */
     }
 
     #info {
@@ -72,22 +41,14 @@
 
 <body>
 
-  <h1>🎯 Aim Lab Matemático</h1>
-
-  <!-- MENÚ DE INICIO -->
-  <div id="menu">
-    <h3>Selecciona el tiempo de la prueba:</h3>
-    <button onclick="iniciarJuego(15)">15 Segundos</button>
-    <button onclick="iniciarJuego(30)">30 Segundos</button>
-    <button onclick="iniciarJuego(60)">60 Segundos</button>
-  </div>
+  <h1>🎯 Aim Trainer 1 Min</h1>
 
   <div id="gameArea">
     <div id="target"></div>
   </div>
 
   <div id="info">
-    ⏱ Tiempo: <span id="time">0</span>s | 🏆 Puntos: <span id="score">0</span>
+    ⏱ Tiempo: <span id="time">60</span>s | 🏆 Puntos: <span id="score">0</span>
   </div>
 
   <script>
@@ -95,65 +56,23 @@
     const gameArea = document.getElementById("gameArea");
     const timeText = document.getElementById("time");
     const scoreText = document.getElementById("score");
-    const menu = document.getElementById("menu");
 
     let score = 0;
-    let timeLeft = 0;
+    let timeLeft = 60;
     let times = [];
     let misses = 0;
-    let startTime = 0;
-    let sessionStartTime = 0;
-    let trayectoria = [];
-    let juegoActivo = false; // Controla si el juego está corriendo
-    let timerInterval;
+    let startTime = Date.now();
 
-    // 🖱️ CAPTURADOR EN RAM (Solo graba si el juego está activo)
-    document.addEventListener("mousemove", (e) => {
-      if (juegoActivo && timeLeft > 0) {
-        trayectoria.push({
-          t: Date.now() - sessionStartTime,
-          x: e.clientX,
-          y: e.clientY
-        });
-      }
-    });
-
-    // 🚀 FUNCIÓN PRINCIPAL PARA ARRANCAR EL JUEGO
-    function iniciarJuego(segundosElegidos) {
-      // 1. Ocultar menú y habilitar área de juego
-      menu.style.display = "none";
-      gameArea.style.opacity = "1";
-      gameArea.style.pointerEvents = "auto";
-      target.style.display = "block";
-
-      // 2. Reiniciar variables
-      score = 0;
-      misses = 0;
-      times = [];
-      trayectoria = [];
-      timeLeft = segundosElegidos;
-
-      scoreText.textContent = score;
+    // ⏱ TIMER
+    const timer = setInterval(() => {
+      timeLeft--;
       timeText.textContent = timeLeft;
 
-      juegoActivo = true;
-      sessionStartTime = Date.now();
-
-      moveTarget();
-
-      // 3. Iniciar el cronómetro
-      timerInterval = setInterval(() => {
-        timeLeft--;
-        timeText.textContent = timeLeft;
-
-        if (timeLeft <= 0) {
-          clearInterval(timerInterval);
-          juegoActivo = false; // Apaga la grabación de datos
-          target.style.display = "none"; // Desaparece el objetivo
-          finishGame();
-        }
-      }, 1000);
-    }
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        finishGame();
+      }
+    }, 1000);
 
     function moveTarget() {
       const maxX = gameArea.clientWidth - 50;
@@ -170,13 +89,13 @@
 
     // 🎯 ACIERTO
     target.addEventListener("click", (e) => {
-      if (!juegoActivo) return;
       e.stopPropagation();
 
       const reaction = Date.now() - startTime;
       times.push(reaction);
 
       score += 10;
+
       scoreText.textContent = score;
 
       moveTarget();
@@ -184,7 +103,6 @@
 
     // ❌ FALLO
     gameArea.addEventListener("click", () => {
-      if (!juegoActivo) return;
       misses++;
 
       score -= 5;
@@ -193,53 +111,9 @@
       scoreText.textContent = score;
     });
 
-    // 📥 DESCARGA Y MATEMÁTICA PESADA
-    function descargarCSV() {
-      let csvContent = "data:text/csv;charset=utf-8,Tiempo(ms),Pos_X,Pos_Y,Velocidad(px/ms),Aceleracion(px/ms2),Estado\n";
-
-      let prevT = null, prevX = null, prevY = null, prevV = null;
-
-      trayectoria.forEach(function (punto, index) {
-        let v = 0;
-        let a = 0;
-        let estado = "Estable";
-
-        if (index > 0) {
-          let dt = punto.t - prevT;
-          if (dt === 0) dt = 1;
-
-          let dx = punto.x - prevX;
-          let dy = punto.y - prevY;
-          let distancia = Math.sqrt(dx * dx + dy * dy);
-          v = distancia / dt;
-
-          if (index > 1) {
-            a = (v - prevV) / dt;
-
-            if (a > 0.001) {
-              estado = "Creciente";
-            } else if (a < -0.001) {
-              estado = "Decreciente(Fatiga)";
-            }
-          }
-        }
-
-        let fila = `${punto.t},${punto.x},${punto.y},${v.toFixed(4)},${a.toFixed(4)},${estado}`;
-        csvContent += fila + "\r\n";
-
-        prevT = punto.t; prevX = punto.x; prevY = punto.y; prevV = v;
-      });
-
-      let encodedUri = encodeURI(csvContent);
-      let link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "datos_aimlab.csv");
-      document.body.appendChild(link);
-      link.click();
-    }
-
     // 📊 FINAL
     function finishGame() {
+
       let avg = times.length
         ? times.reduce((a, b) => a + b) / times.length
         : 0;
@@ -255,18 +129,17 @@
       oldData.push(data);
       localStorage.setItem("aimData", JSON.stringify(oldData));
 
-      descargarCSV();
-
       alert(
-        "⏱ Fin de la prueba\n" +
+        "⏱ Fin del juego\n" +
         "🏆 Puntos: " + score + "\n" +
         "❌ Fallos: " + misses + "\n" +
-        "⚡ Tiempo medio: " + avg.toFixed(2) + " ms\n\n" +
-        "📥 El archivo de datos matemáticos se está descargando..."
+        "⚡ Tiempo medio: " + avg.toFixed(2) + " ms"
       );
 
       window.location.href = "dashboard.html";
     }
+
+    moveTarget();
   </script>
 
 </body>
