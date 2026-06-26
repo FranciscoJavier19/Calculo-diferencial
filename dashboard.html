@@ -1,168 +1,254 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Profesional - Aim Lab</title>
+    <title>Interfaz y analisis de rendimiento</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f4; padding: 20px; color: #333; }
-        .controls { text-align: center; margin-bottom: 30px; }
-        button { padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 8px; border: none; background: #333; color: white; font-weight: bold; }
-        button:hover { background: #555; }
-        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+            color: #333;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            border: none;
+            background: #333;
+            color: white;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
         /* Contenedores unificados */
-        .chart-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: 20px auto; max-width: 900px; display: flex; flex-direction: column; }
-        .desc-text { font-size: 0.85em; color: #666; margin-bottom: 15px; font-style: italic; background: #f9f9f9; padding: 10px; border-left: 4px solid #333; }
-        .chart-wrapper { height: 250px; width: 100%; }
-        
-        .info-box { background: #fff; padding: 15px; border-radius: 10px; border: 1px solid #ddd; margin: 10px auto; max-width: 900px; text-align: left; }
-        .stats-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px; }
-        .card { background: white; padding: 15px; border-radius: 10px; width: 160px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; border: 1px solid #ddd; }
-        .best { border: 2px solid gold; background: #fffdf0; }
-        h2 { text-align: center; margin-top: 40px; }
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .desc-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 15px;
+            font-style: italic;
+            background: #f9f9f9;
+            padding: 10px;
+            border-left: 4px solid #333;
+        }
+
+        .chart-wrapper {
+            height: 250px;
+            width: 100%;
+        }
+
+        .info-box {
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin: 10px auto;
+            max-width: 900px;
+            text-align: left;
+        }
+
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            width: 220px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .best {
+            border: 2px solid gold;
+            background: #fffdf0;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 40px;
+        }
     </style>
 </head>
+
 <body>
 
-    <h1>📊 Dashboard Integral de Rendimiento</h1>
-    
+    <h1>📊 Interfaz y analisis de rendimiento</h1>
+
     <div class="controls">
         <button onclick="window.location.href='index.html'">🎮 Volver a jugar</button>
-        <button onclick="exportToExcel()">💾 Descargar Datos (Excel/CSV)</button>
         <button onclick="localStorage.removeItem('aimData'); location.reload();">🗑 Borrar datos</button>
     </div>
 
     <div class="info-box">
-        <h3>📖 Glosario Técnico</h3>
-        <p>• <b>Fatiga Neuromuscular:</b> Disminución de la capacidad del sistema nervioso para coordinar movimientos precisos.</p>
-        <p>• <b>Jitter:</b> Micro-temblores involuntarios detectados en la aceleración del cursor.</p>
-        <p>• <b>Derivada (Δ):</b> Tasa de cambio instantánea que mide la mejora o el desgaste entre sesiones.</p>
-    </div>
-
-    <div class="info-box">
-        <h3>Contexto del Proyecto</h3>
-        <p>Este sistema evalúa la precisión y fatiga del usuario mediante el análisis cinemático de los movimientos del cursor. Se utilizan <b>derivadas de posición</b> para medir el desgaste cognitivo durante pruebas de tiempo de reacción.</p>
+        <h3>Que hace nuestro sistema</h3>
+        <p>Este sistema evalúa la precisión y fatiga del usuario mediante el análisis cinemático de los movimientos del
+            cursor. Se utilizan <b>derivadas de posición</b> para medir el desgaste cognitivo durante pruebas de tiempo
+            de reacción.</p>
     </div>
 
     <div id="stats" class="stats-grid"></div>
     <div id="predictionBox" style="text-align:center; font-weight:bold; margin-bottom:20px;"></div>
 
     <div class="chart-card">
-        <h3>📈 Score por partida</h3>
+        <h3>📈 Puntaje por partida</h3>
         <p class="desc-text">Rendimiento acumulado: Evolución del puntaje y precisión histórica.</p>
         <div class="chart-wrapper"><canvas id="scoreChart"></canvas></div>
     </div>
-    
+
     <div class="chart-card">
-        <h3>📉 Derivada (Cambio de rendimiento)</h3>
+        <h3>📉 Cambio de rendimiento</h3>
         <p class="desc-text">Análisis de variación entre partidas (Δ). Indica tendencia de mejora o fatiga.</p>
         <div class="chart-wrapper"><canvas id="derivativeChart"></canvas></div>
     </div>
 
     <h2>Análisis Matemático (Carga el CSV)</h2>
     <div style="text-align:center; margin-bottom: 20px;"><input type="file" id="csvFile" accept=".csv"></div>
-    
+
     <div class="chart-card">
-        <h3>Velocidad v(t) - 1ra Derivada</h3>
-        <p class="desc-text">Rapidez instantánea del cursor ($ds/dt$). Picos altos reflejan eficiencia motriz.</p>
+        <h3>Velocidad V(tiempo) - 1ra Derivada</h3>
+        <p class="desc-text">Rapidez instantánea del cursor(La fluidez y rapidez del movimiento). Picos altos reflejan
+            eficiencia motriz y calcula la
+            distancia en píxeles recorrida por el mouse entre cada toma de datos dividida por el tiempo
+            transcurrido.</p>
         <div class="chart-wrapper"><canvas id="chartVel"></canvas></div>
     </div>
-    
+
     <div class="chart-card">
-        <h3>Aceleración a(t) - 2da Derivada</h3>
-        <p class="desc-text">Cambio de velocidad ($dv/dt$). Detecta inestabilidad o temblores (jitter) por fatiga.</p>
+        <h3>Aceleración A(tiempo) - 2da Derivada</h3>
+        <p class="desc-text">Cambio de velocidad respecto al tiempo trasncurrido y que tan rapido cambia de velocidad el
+            cursor. Detecta inestabilidad o temblores
+            (jitter) por fatiga. Mayor a 0 es positivo en cambio de velocidad y Menor a 0 es negativo se registra
+            lentitud.</p>
         <div class="chart-wrapper"><canvas id="chartAcel"></canvas></div>
     </div>
 
     <div class="chart-card">
-        <h3>Monotonía (Estado Creciente/Decreciente)</h3>
-        <p class="desc-text">Identificador de estado del sistema: 1 (Creciente/Óptimo) vs -1 (Fatiga detectada).</p>
+        <h3>Monotonía (Estado Creciente(1)/Decreciente(-1))</h3>
+        <p class="desc-text">Identificador de estado del sistema te dice si el avance de tu mano fue fluido y parejo, o
+            si fue un movimiento cortado y tembloroso por la fatiga: 1 (Creciente/Óptimo) vs -1 (Fatiga detectada).</p>
         <div class="chart-wrapper"><canvas id="chartMonotonia"></canvas></div>
     </div>
 
-<script>
-// --- CONFIGURACIÓN Y EXPORTACIÓN ---
-const commonOptions = { 
-    responsive: true, maintainAspectRatio: false, tension: 0.3, pointRadius: 0,
-    interaction: { mode: 'index', intersect: false },
-    scales: { x: { grid: { color: '#eee' } }, y: { grid: { color: '#eee' } } }
-};
+    <script>
+        // --- CONFIGURACIÓN Y EXPORTACIÓN ---
+        const commonOptions = {
+            responsive: true, maintainAspectRatio: false, tension: 0.3, pointRadius: 0,
+            interaction: { mode: 'index', intersect: false },
+            scales: { x: { grid: { color: '#eee' } }, y: { grid: { color: '#eee' } } }
+        };
 
-let instances = {};
-function draw(id, type, labels, data, label, color, bgColor, stepped = false) {
-    if (instances[id]) instances[id].destroy();
-    instances[id] = new Chart(document.getElementById(id).getContext('2d'), {
-        type: type,
-        data: { labels: labels, datasets: [{ label: label, data: data, borderColor: color, backgroundColor: bgColor, fill: true, stepped: stepped }] },
-        options: commonOptions
-    });
-}
+        let instances = {};
+        function draw(id, type, labels, data, label, color, bgColor, stepped = false) {
+            if (instances[id]) instances[id].destroy();
+            instances[id] = new Chart(document.getElementById(id).getContext('2d'), {
+                type: type,
+                data: { labels: labels, datasets: [{ label: label, data: data, borderColor: color, backgroundColor: bgColor, fill: true, stepped: stepped }] },
+                options: commonOptions
+            });
+        }
 
-// Función de exportación a Excel
-function exportToExcel() {
-    let data = JSON.parse(localStorage.getItem("aimData")) || [];
-    if(data.length === 0) { alert("No hay datos para exportar"); return; }
-    let csv = "Partida,Score,Equivocaciones,Avg_ms,Fecha\n";
-    data.forEach((r, i) => { csv += `${i+1},${r.score},${r.misses},${r.avg.toFixed(2)},"${r.date}"\n`; });
-    let link = document.createElement("a");
-    link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
-    link.download = "historial_rendimiento.csv";
-    link.click();
-}
+        function exportToExcel() {
+            let data = JSON.parse(localStorage.getItem("aimData")) || [];
+            if (data.length === 0) { alert("No hay datos para exportar"); return; }
+            let csv = "Partida,Modalidad(s),Puntaje,Equivocaciones,Avg_ms,Fecha\n";
+            data.forEach((r, i) => {
+                let duration = r.duration ? r.duration : 'N/A';
+                csv += `${i + 1},${duration},${r.score},${r.misses},${r.avg.toFixed(2)},"${r.date}"\n`;
+            });
+            let link = document.createElement("a");
+            link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
+            link.download = "historial_rendimiento.csv";
+            link.click();
+        }
 
-// Carga de partidas y predicción
-let data = JSON.parse(localStorage.getItem("aimData")) || [];
-if (data.length > 0) {
-    let bestIndex = data.map(d=>d.score).indexOf(Math.max(...data.map(d=>d.score)));
-    data.forEach((run, i) => {
-        document.getElementById("stats").innerHTML += `
+        // Carga de partidas y predicción
+        let data = JSON.parse(localStorage.getItem("aimData")) || [];
+        if (data.length > 0) {
+            let bestIndex = data.map(d => d.score).indexOf(Math.max(...data.map(d => d.score)));
+            data.forEach((run, i) => {
+                // Validamos si tiene la duración guardada (por si hay partidas viejas en la memoria)
+                let modalidad = run.duration ? `Modalidad: ${run.duration}s` : 'Modalidad: N/A';
+
+                document.getElementById("stats").innerHTML += `
             <div class="card ${i === bestIndex ? 'best' : ''}">
-                <strong>Partida ${i+1}</strong><br>
-                🏆 Score: ${run.score}<br>
+                <strong>Partida ${i + 1}</strong><br>
+                ⏱ ${modalidad}<br>
+                🏆 Puntaje: ${run.score}<br>
                 ❌ Equivocaciones: ${run.misses}<br>
-                ⚡ Avg: ${run.avg.toFixed(0)}ms<br>
+                ⚡ Avg (Tiempo de reacción): ${run.avg.toFixed(0)}ms<br>
                 📅 ${run.date.split(',')[0]}
             </div>`;
-    });
-    draw('scoreChart', 'line', data.map((_, i) => "P"+(i+1)), data.map(d => d.score), "Score", "green", "rgba(0,128,0,0.1)");
-    draw('derivativeChart', 'bar', data.slice(1).map((_, i) => "Δ"+i), data.slice(1).map((r, i) => r.score - data[i].score), "Cambio", "orange", "orange");
+            });
+            draw('scoreChart', 'line', data.map((_, i) => "P" + (i + 1)), data.map(d => d.score), "Puntaje", "green", "rgba(0,128,0,0.1)");
+            draw('derivativeChart', 'bar', data.slice(1).map((_, i) => "Δ" + i), data.slice(1).map((r, i) => r.score - data[i].score), "Cambio", "orange", "orange");
 
-    let n = data.length;
-    let sumX = data.reduce((a,_,i)=>a+(i+1),0), sumY = data.reduce((a,d)=>a+d.score,0);
-    let sumXY = data.reduce((a,d,i)=>a+((i+1)*d.score),0), sumX2 = data.reduce((a,_,i)=>a+((i+1)**2),0);
-    let m = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX);
-    let b = (sumY - m*sumX) / n;
-    document.getElementById("predictionBox").innerHTML = `🔮 Predicción próxima partida: ${(m*(n+1)+b).toFixed(2)} puntos`;
-}
-
-// Carga y cálculo de CSV Matemático
-function smooth(data, win = 15) { 
-    return data.map((_, i, arr) => { 
-        let s=Math.max(0, i-win), e=Math.min(arr.length, i+win); 
-        let sl=arr.slice(s, e); 
-        return sl.reduce((a,b)=>a+b)/sl.length; 
-    }); 
-}
-
-document.getElementById('csvFile').addEventListener('change', function(e) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const lines = e.target.result.split('\n').filter(r => r.trim() !== "");
-        let t=[], v=[], a=[], m=[];
-        for(let i=1; i<lines.length; i++) {
-            let cols = lines[i].split(',');
-            if(cols.length >= 6) {
-                t.push(i); v.push(parseFloat(cols[3])); a.push(parseFloat(cols[4]));
-                let est = cols[5].trim().toLowerCase();
-                m.push(est.includes('creciente') ? 1 : (est.includes('decreciente') ? -1 : 0));
-            }
+            let n = data.length;
+            let sumX = data.reduce((a, _, i) => a + (i + 1), 0), sumY = data.reduce((a, d) => a + d.score, 0);
+            let sumXY = data.reduce((a, d, i) => a + ((i + 1) * d.score), 0), sumX2 = data.reduce((a, _, i) => a + ((i + 1) ** 2), 0);
+            let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            let b = (sumY - m * sumX) / n;
+            document.getElementById("predictionBox").innerHTML = `🔮 Predicción próxima partida: ${(m * (n + 1) + b).toFixed(2)} puntos`;
         }
-        draw('chartVel', 'line', t, smooth(v), 'v(t)', '#00d4ff', 'rgba(0,212,255,0.1)');
-        draw('chartAcel', 'line', t, smooth(a), 'a(t)', '#ff4d4d', 'rgba(255,77,77,0.1)');
-        draw('chartMonotonia', 'line', t, m, 'Estado', '#39ff14', 'rgba(57,255,20,0.2)', true);
-    };
-    reader.readAsText(e.target.files[0]);
-});
-</script>
+
+        // Carga y cálculo de CSV Matemático
+        function smooth(data, win = 15) {
+            return data.map((_, i, arr) => {
+                let s = Math.max(0, i - win), e = Math.min(arr.length, i + win);
+                let sl = arr.slice(s, e);
+                return sl.reduce((a, b) => a + b) / sl.length;
+            });
+        }
+
+        document.getElementById('csvFile').addEventListener('change', function (e) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const lines = e.target.result.split('\n').filter(r => r.trim() !== "");
+                let t = [], v = [], a = [], m = [];
+                for (let i = 1; i < lines.length; i++) {
+                    let cols = lines[i].split(',');
+                    if (cols.length >= 6) {
+                        t.push(i); v.push(parseFloat(cols[3])); a.push(parseFloat(cols[4]));
+                        let est = cols[5].trim().toLowerCase();
+                        m.push(est.includes('creciente') ? 1 : (est.includes('decreciente') ? -1 : 0));
+                    }
+                }
+                draw('chartVel', 'line', t, smooth(v), 'v(t)', '#00d4ff', 'rgba(0,212,255,0.1)');
+                draw('chartAcel', 'line', t, smooth(a), 'a(t)', '#ff4d4d', 'rgba(255,77,77,0.1)');
+                draw('chartMonotonia', 'line', t, m, 'Estado', '#39ff14', 'rgba(57,255,20,0.2)', true);
+            };
+            reader.readAsText(e.target.files[0]);
+        });
+    </script>
 </body>
+
 </html>
