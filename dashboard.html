@@ -6,7 +6,6 @@
     <title>Interfaz y analisis de rendimiento</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Diseño base inspirado en Wolfram (Oscuro y Morado) */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: #222222;
@@ -29,7 +28,6 @@
             margin-bottom: 30px;
         }
 
-        /* Botones de acción general */
         button {
             padding: 10px 20px;
             margin: 5px;
@@ -47,7 +45,6 @@
             color: #222222;
         }
 
-        /* Cajas donde van los gráficos y textos de contexto */
         .chart-card,
         .info-box {
             background: #2d2d2d;
@@ -61,6 +58,25 @@
             border: 1px solid #444;
         }
 
+        /* Nueve clase para agrupar gráficos lado a lado */
+        .row-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1200px;
+            /* Más ancho para que quepan bien dos */
+            margin: 20px auto;
+            justify-content: center;
+        }
+
+        /* Cuando una tarjeta está dentro del wrapper, toma la mitad del espacio */
+        .row-wrapper .chart-card {
+            margin: 0;
+            flex: 1;
+            min-width: 400px;
+            max-width: none;
+        }
+
         .chart-card h3,
         .info-box h3 {
             color: #9b5de5;
@@ -68,7 +84,6 @@
             margin-bottom: 10px;
         }
 
-        /* Barra lateral explicativa para cada gráfico */
         .desc-text {
             font-size: 0.85em;
             color: #aaa;
@@ -85,7 +100,6 @@
             width: 100%;
         }
 
-        /* Grilla para las tarjetas de cada partida */
         .stats-grid {
             display: flex;
             flex-wrap: wrap;
@@ -105,7 +119,6 @@
             color: #e0e0e0;
         }
 
-        /* Clase para destacar visualmente el mejor puntaje del usuario */
         .best {
             border: 2px solid #9b5de5;
             background: #38254a;
@@ -142,16 +155,18 @@
     <div id="stats" class="stats-grid"></div>
     <div id="predictionBox" style="text-align:center; font-weight:bold; margin-bottom:20px;"></div>
 
-    <div class="chart-card">
-        <h3>Puntaje por partida</h3>
-        <p class="desc-text">Rendimiento acumulado: Evolución del puntaje y precisión histórica.</p>
-        <div class="chart-wrapper"><canvas id="scoreChart"></canvas></div>
-    </div>
+    <div class="row-wrapper">
+        <div class="chart-card">
+            <h3>Puntaje por partida</h3>
+            <p class="desc-text">Rendimiento acumulado: Evolución del puntaje y precisión histórica.</p>
+            <div class="chart-wrapper"><canvas id="scoreChart"></canvas></div>
+        </div>
 
-    <div class="chart-card">
-        <h3>Cambio de rendimiento</h3>
-        <p class="desc-text">Análisis de variación entre partidas (Δ). Indica tendencia de mejora o fatiga.</p>
-        <div class="chart-wrapper"><canvas id="derivativeChart"></canvas></div>
+        <div class="chart-card">
+            <h3>Cambio de rendimiento</h3>
+            <p class="desc-text">Análisis de variación entre partidas (Δ). Indica tendencia de mejora o fatiga.</p>
+            <div class="chart-wrapper"><canvas id="derivativeChart"></canvas></div>
+        </div>
     </div>
 
     <h2>Análisis Matemático (Carga el CSV)</h2>
@@ -181,26 +196,22 @@
     </div>
 
     <script>
-        // Configuración visual que comparten todos los gráficos para mantener coherencia estética
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
             tension: 0.3,
             pointRadius: 0,
-            interaction: { mode: 'index', intersect: false }, // Activa la línea de seguimiento
+            interaction: { mode: 'index', intersect: false },
             scales: { x: { grid: { color: '#444' } }, y: { grid: { color: '#444' } } }
         };
 
-        // Objeto para ir guardando las instancias de los gráficos y poder destruirlas al recargar archivos
         let instances = {};
 
-        // Función genérica constructora de gráficos
         function draw(id, type, labels, data, label, color, bgColor, stepped = false) {
             if (instances[id]) instances[id].destroy();
 
             let yConfig = { grid: { color: '#444' } };
 
-            // Si el gráfico es el de Monotonía, le forzamos una escala limpia entre -1 y 1
             if (id === 'chartMonotonia') {
                 yConfig.min = -1.2;
                 yConfig.max = 1.2;
@@ -223,7 +234,7 @@
                         data: data,
                         borderColor: color,
                         backgroundColor: bgColor,
-                        fill: id !== 'chartMonotonia', // Solo rellenamos el fondo en gráficos de líneas continuas
+                        fill: id !== 'chartMonotonia',
                         stepped: stepped
                     }]
                 },
@@ -240,7 +251,6 @@
             });
         }
 
-        // Función que transforma el historial del navegador en un archivo CSV limpio para Excel
         function exportToExcel() {
             let data = JSON.parse(localStorage.getItem("aimData")) || [];
             if (data.length === 0) {
@@ -248,7 +258,6 @@
                 return;
             }
 
-            // Creamos los encabezados del Excel
             let csv = "Partida,Modalidad(s),Puntaje,Equivocaciones,Avg_ms,Fecha\n";
             data.forEach((r, i) => {
                 let duration = r.duration ? r.duration : 'N/A';
@@ -261,17 +270,14 @@
             link.click();
         }
 
-        // --- LECTURA DEL HISTORIAL (TARJETAS Y GRÁFICOS GENERALES) ---
         let data = JSON.parse(localStorage.getItem("aimData")) || [];
 
         if (data.length > 0) {
-            // Buscamos cuál fue el puntaje más alto para pintarlo distinto
             let bestIndex = data.map(d => d.score).indexOf(Math.max(...data.map(d => d.score)));
 
             data.forEach((run, i) => {
                 let modalidad = run.duration ? `${run.duration}s` : 'N/A';
 
-                // Inyectamos el HTML de cada tarjeta en el DOM
                 document.getElementById("stats").innerHTML += `
                 <div class="card ${i === bestIndex ? 'best' : ''}">
                     <strong>Partida ${i + 1}</strong><br>
@@ -283,43 +289,35 @@
                 </div>`;
             });
 
-            // Dibujamos los gráficos de historial
             draw('scoreChart', 'line', data.map((_, i) => "P" + (i + 1)), data.map(d => d.score), "Puntaje", "#9b5de5", "rgba(155, 93, 229, 0.1)");
             draw('derivativeChart', 'bar', data.slice(1).map((_, i) => "Δ" + i), data.slice(1).map((r, i) => r.score - data[i].score), "Cambio", "orange", "orange");
 
-            // --- ALGORITMO DE PREDICCIÓN (Mínimos Cuadrados Ordinarios) ---
             let n = data.length;
             let sumX = data.reduce((a, _, i) => a + (i + 1), 0);
             let sumY = data.reduce((a, d) => a + d.score, 0);
             let sumXY = data.reduce((a, d, i) => a + ((i + 1) * d.score), 0);
             let sumX2 = data.reduce((a, _, i) => a + ((i + 1) ** 2), 0);
 
-            // Calculamos pendiente (m) e intersección (b)
             let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
             let b = (sumY - m * sumX) / n;
 
             document.getElementById("predictionBox").innerHTML = `Predicción próxima partida: ${(m * (n + 1) + b).toFixed(2)} puntos`;
         }
 
-        // --- LECTURA DEL ARCHIVO CSV Y CÁLCULOS FÍSICOS ---
-
-        // Función vital para limpiar los gráficos (Media móvil). Suaviza el temblor normal del mouse.
         function smooth(data, win = 15) {
             return data.map((_, i, arr) => {
                 let s = Math.max(0, i - win), e = Math.min(arr.length, i + win);
                 let sl = arr.slice(s, e);
-                return sl.reduce((a, b) => a + b) / sl.length; // Promedia los valores vecinos
+                return sl.reduce((a, b) => a + b) / sl.length;
             });
         }
 
         document.getElementById('csvFile').addEventListener('change', function (e) {
             const reader = new FileReader();
             reader.onload = function (e) {
-                // Separamos el texto del CSV por líneas y descartamos las vacías
                 const lines = e.target.result.split('\n').filter(r => r.trim() !== "");
                 let t = [], v = [], a = [], m = [];
 
-                // Empezamos desde 1 para saltarnos los títulos de las columnas del CSV
                 for (let i = 1; i < lines.length; i++) {
                     let cols = lines[i].split(',');
                     if (cols.length >= 6) {
@@ -328,15 +326,13 @@
                         a.push(parseFloat(cols[4]));
 
                         let est = cols[5].trim().toLowerCase();
-                        // Guardamos el estado numéricamente para graficarlo bien en escalera
                         m.push(est.includes('decreciente') ? -1 : 1);
                     }
                 }
 
-                // Mandamos a graficar pasando los datos por el suavizador (smooth)
                 draw('chartVel', 'line', t, smooth(v), 'v(t)', '#00d4ff', 'rgba(0,212,255,0.1)');
                 draw('chartAcel', 'line', t, smooth(a), 'a(t)', '#ff4d4d', 'rgba(255,77,77,0.1)');
-                draw('chartMonotonia', 'line', t, m, 'Estado', '#39ff14', 'transparent', true); // True activa el modo escalonado
+                draw('chartMonotonia', 'line', t, m, 'Estado', '#39ff14', 'transparent', true);
             };
             reader.readAsText(e.target.files[0]);
         });
