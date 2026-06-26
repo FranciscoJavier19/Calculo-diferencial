@@ -5,20 +5,34 @@
   <meta charset="UTF-8">
   <title>Aim Trainer Matemático</title>
   <style>
+    /* Estilos base en modo oscuro para que coincida con el dashboard */
     body {
       margin: 0;
-      font-family: Arial;
+      font-family: 'Segoe UI', Arial, sans-serif;
       text-align: center;
-      background: #f2f2f2;
+      background: #222222;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #9b5de5;
+      margin-bottom: 20px;
     }
 
     #menu {
       margin: 20px auto;
-      padding: 15px;
-      background: white;
+      padding: 20px;
+      background: #2d2d2d;
       width: 500px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #ccc;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      border: 1px solid #444;
+    }
+
+    #menu h3 {
+      color: #9b5de5;
+      margin-top: 0;
     }
 
     button {
@@ -26,79 +40,158 @@
       font-size: 16px;
       margin: 0 10px;
       cursor: pointer;
-      border: none;
-      border-radius: 5px;
-      background: #007bff;
-      color: white;
+      border-radius: 8px;
+      border: 1px solid #9b5de5;
+      background: #2d2d2d;
+      color: #9b5de5;
       font-weight: bold;
+      transition: all 0.3s ease;
     }
 
+    button:hover {
+      background: #9b5de5;
+      color: #222222;
+    }
+
+    /* El área de juego la dejamos blanca para que resalte el objetivo */
     #gameArea {
       width: 800px;
       height: 500px;
       margin: 20px auto;
-      background: white;
+      background: #ffffff;
       position: relative;
-      border: 2px solid black;
+      border: 2px solid #9b5de5;
+      border-radius: 12px;
       overflow: hidden;
       opacity: 0.5;
       pointer-events: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.3s ease;
     }
 
     #target {
       width: 50px;
       height: 50px;
-      background: red;
+      background: #ff4d4d;
       border-radius: 50%;
       position: absolute;
       cursor: pointer;
       display: none;
+      box-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
     }
 
     #info {
       font-size: 20px;
-      margin-top: 10px;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #e0e0e0;
+    }
+
+    #info span {
+      color: #9b5de5;
     }
   </style>
 </head>
 
 <body>
   <h1>🎯 Aim Lab Matemático</h1>
+
   <div id="menu">
     <h3>Selecciona el tiempo de la prueba:</h3>
     <button onclick="iniciarJuego(15)">15 Segundos</button>
     <button onclick="iniciarJuego(30)">30 Segundos</button>
     <button onclick="iniciarJuego(60)">60 Segundos</button>
   </div>
+
   <div id="gameArea">
     <div id="target"></div>
   </div>
+
   <div id="info">⏱ Tiempo: <span id="time">0</span>s | 🏆 Puntaje: <span id="score">0</span> | ❌ Equivocaciones: <span
       id="misses">0</span></div>
 
   <script>
-    const target = document.getElementById("target"), gameArea = document.getElementById("gameArea"), timeText = document.getElementById("time"), scoreText = document.getElementById("score"), missesText = document.getElementById("misses"), menu = document.getElementById("menu");
-    let score = 0, timeLeft = 0, times = [], misses = 0, startTime = 0, sessionStartTime = 0, trayectoria = [], juegoActivo = false, timerInterval, matchDuration = 0;
+    // Referencias a los elementos del DOM que vamos a actualizar
+    const target = document.getElementById("target");
+    const gameArea = document.getElementById("gameArea");
+    const timeText = document.getElementById("time");
+    const scoreText = document.getElementById("score");
+    const missesText = document.getElementById("misses");
+    const menu = document.getElementById("menu");
 
+    // Variables globales para el estado del juego
+    let score = 0, timeLeft = 0, times = [], misses = 0;
+    let startTime = 0, sessionStartTime = 0;
+    let trayectoria = [], juegoActivo = false, timerInterval, matchDuration = 0;
+
+    // Escuchamos el mouse en todo momento. Si el juego está activo, guardamos la coordenada X, Y y el tiempo.
     document.addEventListener("mousemove", (e) => {
-      if (juegoActivo && timeLeft > 0) trayectoria.push({ t: Date.now() - sessionStartTime, x: e.clientX, y: e.clientY });
+      if (juegoActivo && timeLeft > 0) {
+        trayectoria.push({ t: Date.now() - sessionStartTime, x: e.clientX, y: e.clientY });
+      }
     });
 
+    // Función principal para arrancar la partida
     function iniciarJuego(segundos) {
-      matchDuration = segundos; // Guardamos la duración elegida
-      menu.style.display = "none"; gameArea.style.opacity = "1"; gameArea.style.pointerEvents = "auto"; target.style.display = "block";
+      matchDuration = segundos; // Guardamos si eligió 15, 30 o 60 para el dashboard
+
+      // Ocultamos el menú y activamos la zona de juego
+      menu.style.display = "none";
+      gameArea.style.opacity = "1";
+      gameArea.style.pointerEvents = "auto";
+      target.style.display = "block";
+
+      // Reseteamos todas las variables por si es la segunda vez que juega
       score = 0; misses = 0; times = []; trayectoria = []; timeLeft = segundos;
-      scoreText.textContent = score; timeText.textContent = timeLeft; missesText.textContent = misses;
-      juegoActivo = true; sessionStartTime = Date.now();
-      moveTarget();
-      timerInterval = setInterval(() => { timeLeft--; timeText.textContent = timeLeft; if (timeLeft <= 0) { clearInterval(timerInterval); juegoActivo = false; target.style.display = "none"; finishGame(); } }, 1000);
+      scoreText.textContent = score;
+      timeText.textContent = timeLeft;
+      missesText.textContent = misses;
+
+      juegoActivo = true;
+      sessionStartTime = Date.now();
+
+      moveTarget(); // Ponemos el primer objetivo en pantalla
+
+      // Temporizador que resta 1 segundo hasta llegar a 0
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timeText.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          juegoActivo = false;
+          target.style.display = "none";
+          finishGame();
+        }
+      }, 1000);
     }
 
-    function moveTarget() { target.style.left = (Math.random() * (gameArea.clientWidth - 50)) + "px"; target.style.top = (Math.random() * (gameArea.clientHeight - 50)) + "px"; startTime = Date.now(); }
+    // Mueve el objetivo rojo a una posición aleatoria dentro de la caja blanca
+    function moveTarget() {
+      target.style.left = (Math.random() * (gameArea.clientWidth - 50)) + "px";
+      target.style.top = (Math.random() * (gameArea.clientHeight - 50)) + "px";
+      startTime = Date.now(); // Guardamos en qué momento apareció para medir la reacción
+    }
 
-    target.addEventListener("click", (e) => { if (!juegoActivo) return; e.stopPropagation(); times.push(Date.now() - startTime); score += 10; scoreText.textContent = score; moveTarget(); });
-    gameArea.addEventListener("click", () => { if (!juegoActivo) return; misses++; score = Math.max(0, score - 5); scoreText.textContent = score; missesText.textContent = misses; });
+    // Lógica al hacer clic correctamente en el círculo rojo
+    target.addEventListener("click", (e) => {
+      if (!juegoActivo) return;
+      e.stopPropagation(); // Evitamos que el clic cuente también como un clic en el fondo (fallo)
+      times.push(Date.now() - startTime); // Guardamos cuánto tardó en reaccionar
+      score += 10;
+      scoreText.textContent = score;
+      moveTarget();
+    });
 
+    // Lógica al hacer clic en el fondo blanco (equivocación)
+    gameArea.addEventListener("click", () => {
+      if (!juegoActivo) return;
+      misses++;
+      score = Math.max(0, score - 5); // Restamos 5 puntos, pero evitamos que baje de cero
+      scoreText.textContent = score;
+      missesText.textContent = misses;
+    });
+
+    // Función que transforma toda la ruta del mouse en derivadas matemáticas y genera el archivo
     function descargarCSV() {
       let csv = "Tiempo(ms),Pos_X,Pos_Y,Velocidad,Aceleracion,Estado\n";
       let prevT = null, prevX = null, prevY = null, prevV = null;
@@ -106,33 +199,49 @@
       trayectoria.forEach((p, i) => {
         let v = 0, a = 0, estado = "Estable";
         if (i > 0) {
+          // dt es el tiempo transcurrido entre este punto y el anterior
           let dt = Math.max(p.t - prevT, 1);
+
+          // Primera derivada: Distancia entre dos puntos (Pitágoras) dividida por el tiempo
           v = Math.sqrt((p.x - prevX) ** 2 + (p.y - prevY) ** 2) / dt;
+
           if (i > 1) {
+            // Segunda derivada: Cambio de velocidad dividido por el tiempo
             a = (v - prevV) / dt;
+            // Definimos el estado neuromuscular según el cambio de aceleración
             estado = a > 0.001 ? "Creciente" : (a < -0.001 ? "Decreciente" : "Estable");
           }
         }
         csv += `${p.t},${p.x},${p.y},${v.toFixed(4)},${a.toFixed(4)},${estado}\n`;
+
+        // Actualizamos las variables previas para la siguiente vuelta del bucle
         prevT = p.t; prevX = p.x; prevY = p.y; prevV = v;
       });
 
+      // Forzamos la descarga del archivo generado
       let link = document.createElement("a");
       link.href = encodeURI("data:text/csv;charset=utf-8," + csv);
       link.download = "datos_aimlab.csv";
       link.click();
     }
 
+    // Se ejecuta cuando el tiempo llega a cero
     function finishGame() {
+      // Calculamos el promedio de tiempo de reacción. Si no le dio a nada, es 0.
       let avg = times.length ? times.reduce((a, b) => a + b) / times.length : 0;
-      // Ahora pasamos también "duration" (15, 30 o 60) al almacenamiento
+
+      // Empaquetamos los resultados de la partida
       let data = { score, avg, misses, date: new Date().toLocaleString(), duration: matchDuration };
+
+      // Los guardamos en el localStorage (memoria del navegador) para que el dashboard los lea
       let oldData = JSON.parse(localStorage.getItem("aimData")) || [];
       oldData.push(data);
       localStorage.setItem("aimData", JSON.stringify(oldData));
 
+      // Generamos el CSV cinemático
       descargarCSV();
 
+      // Avisamos al jugador y lo mandamos al análisis
       alert(`Juego Finalizado.\nPuntaje: ${score}\nEquivocaciones: ${misses}`);
       window.location.href = "dashboard.html";
     }

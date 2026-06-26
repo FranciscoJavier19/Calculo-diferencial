@@ -6,11 +6,22 @@
     <title>Interfaz y analisis de rendimiento</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* Diseño base inspirado en Wolfram (Oscuro y Morado) */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f4f4f4;
+            background: #222222;
             padding: 20px;
-            color: #333;
+            color: #e0e0e0;
+        }
+
+        h1,
+        h2 {
+            color: #9b5de5;
+            text-align: center;
+        }
+
+        h2 {
+            margin-top: 40px;
         }
 
         .controls {
@@ -18,41 +29,55 @@
             margin-bottom: 30px;
         }
 
+        /* Botones de acción general */
         button {
             padding: 10px 20px;
             margin: 5px;
             cursor: pointer;
             border-radius: 8px;
-            border: none;
-            background: #333;
-            color: white;
+            border: 1px solid #9b5de5;
+            background: #2d2d2d;
+            color: #9b5de5;
             font-weight: bold;
+            transition: all 0.3s ease;
         }
 
         button:hover {
-            background: #555;
+            background: #9b5de5;
+            color: #222222;
         }
 
-        /* Contenedores unificados */
-        .chart-card {
-            background: white;
+        /* Cajas donde van los gráficos y textos de contexto */
+        .chart-card,
+        .info-box {
+            background: #2d2d2d;
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             margin: 20px auto;
             max-width: 900px;
             display: flex;
             flex-direction: column;
+            border: 1px solid #444;
         }
 
+        .chart-card h3,
+        .info-box h3 {
+            color: #9b5de5;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        /* Barra lateral explicativa para cada gráfico */
         .desc-text {
             font-size: 0.85em;
-            color: #666;
+            color: #aaa;
             margin-bottom: 15px;
             font-style: italic;
-            background: #f9f9f9;
+            background: #333333;
             padding: 10px;
-            border-left: 4px solid #333;
+            border-left: 4px solid #9b5de5;
+            border-radius: 0 8px 8px 0;
         }
 
         .chart-wrapper {
@@ -60,16 +85,7 @@
             width: 100%;
         }
 
-        .info-box {
-            background: #fff;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            margin: 10px auto;
-            max-width: 900px;
-            text-align: left;
-        }
-
+        /* Grilla para las tarjetas de cada partida */
         .stats-grid {
             display: flex;
             flex-wrap: wrap;
@@ -79,23 +95,30 @@
         }
 
         .card {
-            background: white;
+            background: #2d2d2d;
             padding: 15px;
             border-radius: 10px;
             width: 220px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             text-align: center;
-            border: 1px solid #ddd;
+            border: 1px solid #444;
+            color: #e0e0e0;
         }
 
+        /* Clase para destacar visualmente el mejor puntaje del usuario */
         .best {
-            border: 2px solid gold;
-            background: #fffdf0;
+            border: 2px solid #9b5de5;
+            background: #38254a;
+            box-shadow: 0 0 12px rgba(155, 93, 229, 0.4);
         }
 
-        h2 {
-            text-align: center;
-            margin-top: 40px;
+        input[type="file"] {
+            color: #e0e0e0;
+            background: #2d2d2d;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -105,8 +128,8 @@
     <h1>📊 Interfaz y analisis de rendimiento</h1>
 
     <div class="controls">
-        <button onclick="window.location.href='index.html'">🎮 Volver a jugar</button>
-        <button onclick="localStorage.removeItem('aimData'); location.reload();">🗑 Borrar datos</button>
+        <button onclick="window.location.href='index.html'">Volver a jugar</button>
+        <button onclick="localStorage.removeItem('aimData'); location.reload();">Borrar datos</button>
     </div>
 
     <div class="info-box">
@@ -120,13 +143,13 @@
     <div id="predictionBox" style="text-align:center; font-weight:bold; margin-bottom:20px;"></div>
 
     <div class="chart-card">
-        <h3>📈 Puntaje por partida</h3>
+        <h3>Puntaje por partida</h3>
         <p class="desc-text">Rendimiento acumulado: Evolución del puntaje y precisión histórica.</p>
         <div class="chart-wrapper"><canvas id="scoreChart"></canvas></div>
     </div>
 
     <div class="chart-card">
-        <h3>📉 Cambio de rendimiento</h3>
+        <h3>Cambio de rendimiento</h3>
         <p class="desc-text">Análisis de variación entre partidas (Δ). Indica tendencia de mejora o fatiga.</p>
         <div class="chart-wrapper"><canvas id="derivativeChart"></canvas></div>
     </div>
@@ -136,115 +159,184 @@
 
     <div class="chart-card">
         <h3>Velocidad V(tiempo) - 1ra Derivada</h3>
-        <p class="desc-text">Rapidez instantánea del cursor(La fluidez y rapidez del movimiento). Picos altos reflejan
-            eficiencia motriz y calcula la
-            distancia en píxeles recorrida por el mouse entre cada toma de datos dividida por el tiempo
-            transcurrido.</p>
+        <p class="desc-text">Rapidez instantánea del cursor (La fluidez y rapidez del movimiento). Picos altos reflejan
+            eficiencia motriz y calcula la distancia en píxeles recorrida por el mouse entre cada toma de datos dividida
+            por el tiempo transcurrido.</p>
         <div class="chart-wrapper"><canvas id="chartVel"></canvas></div>
     </div>
 
     <div class="chart-card">
         <h3>Aceleración A(tiempo) - 2da Derivada</h3>
-        <p class="desc-text">Cambio de velocidad respecto al tiempo trasncurrido y que tan rapido cambia de velocidad el
-            cursor. Detecta inestabilidad o temblores
-            (jitter) por fatiga. Mayor a 0 es positivo en cambio de velocidad y Menor a 0 es negativo se registra
-            lentitud.</p>
+        <p class="desc-text">Cambio de velocidad respecto al tiempo transcurrido y qué tan rápido cambia de velocidad el
+            cursor. Detecta inestabilidad o temblores (jitter) por fatiga. Mayor a 0 es positivo en cambio de velocidad
+            y Menor a 0 es negativo se registra lentitud.</p>
         <div class="chart-wrapper"><canvas id="chartAcel"></canvas></div>
     </div>
 
     <div class="chart-card">
-        <h3>Monotonía (Estado Creciente(1)/Decreciente(-1))</h3>
-        <p class="desc-text">Identificador de estado del sistema te dice si el avance de tu mano fue fluido y parejo, o
-            si fue un movimiento cortado y tembloroso por la fatiga: 1 (Creciente/Óptimo) vs -1 (Fatiga detectada).</p>
+        <h3>Monotonía (Estado Creciente/Decreciente)</h3>
+        <p class="desc-text">Identificador de estado del sistema: te dice si el avance de tu mano fue fluido y parejo, o
+            si fue un movimiento cortado y tembloroso por la fatiga.</p>
         <div class="chart-wrapper"><canvas id="chartMonotonia"></canvas></div>
     </div>
 
     <script>
-        // --- CONFIGURACIÓN Y EXPORTACIÓN ---
+        // Configuración visual que comparten todos los gráficos para mantener coherencia estética
         const commonOptions = {
-            responsive: true, maintainAspectRatio: false, tension: 0.3, pointRadius: 0,
-            interaction: { mode: 'index', intersect: false },
-            scales: { x: { grid: { color: '#eee' } }, y: { grid: { color: '#eee' } } }
+            responsive: true,
+            maintainAspectRatio: false,
+            tension: 0.3,
+            pointRadius: 0,
+            interaction: { mode: 'index', intersect: false }, // Activa la línea de seguimiento
+            scales: { x: { grid: { color: '#444' } }, y: { grid: { color: '#444' } } }
         };
 
+        // Objeto para ir guardando las instancias de los gráficos y poder destruirlas al recargar archivos
         let instances = {};
+
+        // Función genérica constructora de gráficos
         function draw(id, type, labels, data, label, color, bgColor, stepped = false) {
             if (instances[id]) instances[id].destroy();
+
+            let yConfig = { grid: { color: '#444' } };
+
+            // Si el gráfico es el de Monotonía, le forzamos una escala limpia entre -1 y 1
+            if (id === 'chartMonotonia') {
+                yConfig.min = -1.2;
+                yConfig.max = 1.2;
+                yConfig.ticks = {
+                    stepSize: 1,
+                    callback: function (value) {
+                        if (value === 1) return 'Creciente (1)';
+                        if (value === -1) return 'Decreciente (-1)';
+                        return '';
+                    }
+                };
+            }
+
             instances[id] = new Chart(document.getElementById(id).getContext('2d'), {
                 type: type,
-                data: { labels: labels, datasets: [{ label: label, data: data, borderColor: color, backgroundColor: bgColor, fill: true, stepped: stepped }] },
-                options: commonOptions
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: bgColor,
+                        fill: id !== 'chartMonotonia', // Solo rellenamos el fondo en gráficos de líneas continuas
+                        stepped: stepped
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    tension: id === 'chartMonotonia' ? 0.1 : 0.3,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { grid: { color: '#444' } },
+                        y: yConfig
+                    }
+                }
             });
         }
 
+        // Función que transforma el historial del navegador en un archivo CSV limpio para Excel
         function exportToExcel() {
             let data = JSON.parse(localStorage.getItem("aimData")) || [];
-            if (data.length === 0) { alert("No hay datos para exportar"); return; }
+            if (data.length === 0) {
+                alert("No hay datos para exportar");
+                return;
+            }
+
+            // Creamos los encabezados del Excel
             let csv = "Partida,Modalidad(s),Puntaje,Equivocaciones,Avg_ms,Fecha\n";
             data.forEach((r, i) => {
                 let duration = r.duration ? r.duration : 'N/A';
                 csv += `${i + 1},${duration},${r.score},${r.misses},${r.avg.toFixed(2)},"${r.date}"\n`;
             });
+
             let link = document.createElement("a");
             link.href = "data:text/csv;charset=utf-8," + encodeURI(csv);
             link.download = "historial_rendimiento.csv";
             link.click();
         }
 
-        // Carga de partidas y predicción
+        // --- LECTURA DEL HISTORIAL (TARJETAS Y GRÁFICOS GENERALES) ---
         let data = JSON.parse(localStorage.getItem("aimData")) || [];
-        if (data.length > 0) {
-            let bestIndex = data.map(d => d.score).indexOf(Math.max(...data.map(d => d.score)));
-            data.forEach((run, i) => {
-                // Validamos si tiene la duración guardada (por si hay partidas viejas en la memoria)
-                let modalidad = run.duration ? `Modalidad: ${run.duration}s` : 'Modalidad: N/A';
 
+        if (data.length > 0) {
+            // Buscamos cuál fue el puntaje más alto para pintarlo distinto
+            let bestIndex = data.map(d => d.score).indexOf(Math.max(...data.map(d => d.score)));
+
+            data.forEach((run, i) => {
+                let modalidad = run.duration ? `${run.duration}s` : 'N/A';
+
+                // Inyectamos el HTML de cada tarjeta en el DOM
                 document.getElementById("stats").innerHTML += `
-            <div class="card ${i === bestIndex ? 'best' : ''}">
-                <strong>Partida ${i + 1}</strong><br>
-                ⏱ ${modalidad}<br>
-                🏆 Puntaje: ${run.score}<br>
-                ❌ Equivocaciones: ${run.misses}<br>
-                ⚡ Avg (Tiempo de reacción): ${run.avg.toFixed(0)}ms<br>
-                📅 ${run.date.split(',')[0]}
-            </div>`;
+                <div class="card ${i === bestIndex ? 'best' : ''}">
+                    <strong>Partida ${i + 1}</strong><br>
+                    Modalidad: ${modalidad}<br>
+                    Puntaje: ${run.score}<br>
+                    Equivocaciones: ${run.misses}<br>
+                    Avg (Tiempo de reacción): ${run.avg.toFixed(0)}ms<br>
+                    Fecha: ${run.date.split(',')[0]}
+                </div>`;
             });
-            draw('scoreChart', 'line', data.map((_, i) => "P" + (i + 1)), data.map(d => d.score), "Puntaje", "green", "rgba(0,128,0,0.1)");
+
+            // Dibujamos los gráficos de historial
+            draw('scoreChart', 'line', data.map((_, i) => "P" + (i + 1)), data.map(d => d.score), "Puntaje", "#9b5de5", "rgba(155, 93, 229, 0.1)");
             draw('derivativeChart', 'bar', data.slice(1).map((_, i) => "Δ" + i), data.slice(1).map((r, i) => r.score - data[i].score), "Cambio", "orange", "orange");
 
+            // --- ALGORITMO DE PREDICCIÓN (Mínimos Cuadrados Ordinarios) ---
             let n = data.length;
-            let sumX = data.reduce((a, _, i) => a + (i + 1), 0), sumY = data.reduce((a, d) => a + d.score, 0);
-            let sumXY = data.reduce((a, d, i) => a + ((i + 1) * d.score), 0), sumX2 = data.reduce((a, _, i) => a + ((i + 1) ** 2), 0);
+            let sumX = data.reduce((a, _, i) => a + (i + 1), 0);
+            let sumY = data.reduce((a, d) => a + d.score, 0);
+            let sumXY = data.reduce((a, d, i) => a + ((i + 1) * d.score), 0);
+            let sumX2 = data.reduce((a, _, i) => a + ((i + 1) ** 2), 0);
+
+            // Calculamos pendiente (m) e intersección (b)
             let m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
             let b = (sumY - m * sumX) / n;
-            document.getElementById("predictionBox").innerHTML = `🔮 Predicción próxima partida: ${(m * (n + 1) + b).toFixed(2)} puntos`;
+
+            document.getElementById("predictionBox").innerHTML = `Predicción próxima partida: ${(m * (n + 1) + b).toFixed(2)} puntos`;
         }
 
-        // Carga y cálculo de CSV Matemático
+        // --- LECTURA DEL ARCHIVO CSV Y CÁLCULOS FÍSICOS ---
+
+        // Función vital para limpiar los gráficos (Media móvil). Suaviza el temblor normal del mouse.
         function smooth(data, win = 15) {
             return data.map((_, i, arr) => {
                 let s = Math.max(0, i - win), e = Math.min(arr.length, i + win);
                 let sl = arr.slice(s, e);
-                return sl.reduce((a, b) => a + b) / sl.length;
+                return sl.reduce((a, b) => a + b) / sl.length; // Promedia los valores vecinos
             });
         }
 
         document.getElementById('csvFile').addEventListener('change', function (e) {
             const reader = new FileReader();
             reader.onload = function (e) {
+                // Separamos el texto del CSV por líneas y descartamos las vacías
                 const lines = e.target.result.split('\n').filter(r => r.trim() !== "");
                 let t = [], v = [], a = [], m = [];
+
+                // Empezamos desde 1 para saltarnos los títulos de las columnas del CSV
                 for (let i = 1; i < lines.length; i++) {
                     let cols = lines[i].split(',');
                     if (cols.length >= 6) {
-                        t.push(i); v.push(parseFloat(cols[3])); a.push(parseFloat(cols[4]));
+                        t.push(i);
+                        v.push(parseFloat(cols[3]));
+                        a.push(parseFloat(cols[4]));
+
                         let est = cols[5].trim().toLowerCase();
-                        m.push(est.includes('creciente') ? 1 : (est.includes('decreciente') ? -1 : 0));
+                        // Guardamos el estado numéricamente para graficarlo bien en escalera
+                        m.push(est.includes('decreciente') ? -1 : 1);
                     }
                 }
+
+                // Mandamos a graficar pasando los datos por el suavizador (smooth)
                 draw('chartVel', 'line', t, smooth(v), 'v(t)', '#00d4ff', 'rgba(0,212,255,0.1)');
                 draw('chartAcel', 'line', t, smooth(a), 'a(t)', '#ff4d4d', 'rgba(255,77,77,0.1)');
-                draw('chartMonotonia', 'line', t, m, 'Estado', '#39ff14', 'rgba(57,255,20,0.2)', true);
+                draw('chartMonotonia', 'line', t, m, 'Estado', '#39ff14', 'transparent', true); // True activa el modo escalonado
             };
             reader.readAsText(e.target.files[0]);
         });
